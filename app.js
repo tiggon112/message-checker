@@ -1,49 +1,38 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const fs = require("fs");
 
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+const { msgChecker } = require("./services");
+const { getEmailList } = require("./services/email-list");
+const { startEmailCheck } = require("./email.check");
 
-var app = express();
+const start = async () => {
+    // (function () {
+    //   const P = ["\\", "|", "/", "-"];
+    //   let x = 0;
+    //   return setInterval(function () {
+    //     process.stdout.write("\r"+P[x++]);
+    //     x &= 3;
+    //   }, 500);
+    // })();
+    let count = 0;
+    while (1) {
+        console.log(`Round: ${count+1}`);
+        const emailList = await getEmailList();
+        if (count % 20 == 3) {
+            await startEmailCheck(emailList);
+        }
+        for (let email of emailList) {
+            if (!email.includes("@")) continue;
+            if (["gmail.com", "hotmail.com", "outlook.com"].includes(email.split("@")[1])) continue;
+            await msgChecker(email);
+            await wait(2000);
+        }
+        await wait(1000*60*2);
+        count++;
+    }
+}
 
-const { fetchService } = require("./services");
-const data = require("./list.json");
+const wait = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-data.list.forEach((email) => {
-    console.log("email", email);
-    fetchService.getEmail(email);
-});
-
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
-
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
-
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
-
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-    next(createError(404));
-});
-
-// error handler
-app.use(function (err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get("env") === "development" ? err : {};
-
-    // render the error page
-    res.status(err.status || 500);
-    res.render("error");
-});
-
-module.exports = app;
+start();
