@@ -1,5 +1,7 @@
 var Airtable = require('airtable');
-var base = new Airtable({apiKey: 'patzePypueD0h6Hub.ed29235988ef3f776136c7162471ac867a73ce3b0b394f6889e8a00c6c5a69bf'}).base('appPVg8E1kQM0fwFW');
+require('dotenv').config();
+
+var base = new Airtable({apiKey: process.env.AIR_TABLE_API_KEY}).base('appPVg8E1kQM0fwFW');
 
 exports.getEmailList = () => new Promise((resolve, reject) => {
     base('Upwork Acc').select({
